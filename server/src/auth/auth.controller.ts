@@ -1,14 +1,15 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { AuthService } from './auth.service';
-import { AuthDto } from './dto/auth.dto';
-import { AccessTokenGuard } from '../guards/access-token.guard';
-import { RefreshTokenGuard } from '../guards/refresh-token.guard';
+import {Body, Controller, Get, Post, Req, UseGuards} from '@nestjs/common';
+import {Request} from 'express';
+import {CreateUserDto} from 'src/users/dto/create-user.dto';
+import {AuthService} from './auth.service';
+import {AuthDto} from './dto/auth.dto';
+import {AccessTokenGuard} from '../guards/access-token.guard';
+import {RefreshTokenGuard} from '../guards/refresh-token.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) {
+  }
 
   @Post('signup')
   signup(@Body() createUserDto: CreateUserDto) {
@@ -17,6 +18,7 @@ export class AuthController {
 
   @Post('signin')
   signin(@Body() data: AuthDto) {
+    console.log(`AuthDto`, AuthDto);
     return this.authService.signIn(data);
   }
 
