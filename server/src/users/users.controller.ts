@@ -1,46 +1,23 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
-import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { AccessTokenGuard } from '../guards/access-token.guard';
+import {Body, Controller, Delete, Param, Patch, UseGuards,} from '@nestjs/common';
+import {UsersService} from './users.service';
+import {UpdateUserInfoDto} from './dto/updateUserInfo.dto';
+import {AccessTokenGuard} from '../guards/access-token.guard';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+    constructor(private readonly usersService: UsersService) {
+    }
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
-  }
+    @UseGuards(AccessTokenGuard)
+    @Patch(':userId')
+    update(@Param('userId') userId: string, @Body() updateUserInfo: UpdateUserInfoDto) {
+        return this.usersService.update(userId, updateUserInfo);
+    }
 
-  @Get(':id')
-  findById(@Param('id') id: string) {
-    return this.usersService.findById(id);
-  }
-
-  @UseGuards(AccessTokenGuard)
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
-  }
-
-  @UseGuards(AccessTokenGuard)
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
-  }
+    @UseGuards(AccessTokenGuard)
+    @Delete(':id')
+    remove(@Param('id') id: string) {
+        return this.usersService.remove(id);
+    }
 }
