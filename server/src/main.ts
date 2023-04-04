@@ -2,21 +2,14 @@ import {NestFactory} from '@nestjs/core';
 import {AppModule} from './app.module';
 import * as cookieParser from 'cookie-parser';
 import {ConfigService} from "@nestjs/config";
-import {BadRequestException, ValidationPipe} from "@nestjs/common";
+import {useContainer} from "class-validator";
 
 const start = async () => {
     try {
         const app = await NestFactory.create(AppModule);
 
-        app.useGlobalPipes(new ValidationPipe({
-            transform: true, exceptionFactory: (errors) => {
-                const errorMessages = {errors: []};
-                errors.forEach(error => {
-                    errorMessages.errors.push({[`${error.property}`]: Object.values(error.constraints).join('. ').trim()});
-                });
-                return new BadRequestException(errorMessages);
-            }
-        }));
+        useContainer(app.select(AppModule), {fallbackOnErrors: true});
+
         const configService = app.get(ConfigService);
         const PORT = configService.get<number>("PORT");
 

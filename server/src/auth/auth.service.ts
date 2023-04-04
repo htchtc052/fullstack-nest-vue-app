@@ -4,13 +4,16 @@ import {JwtService} from '@nestjs/jwt';
 import {ConfigService} from '@nestjs/config';
 import {SigninDto} from './dto/signin.dto';
 import * as argon2 from 'argon2';
-import {JwtTokenDto} from "./dto/jwtToken.dto";
 import {TokenService} from "../users/token.service";
-import {Tokens} from "./interfaces.tokens";
 import {v4 as uuid} from 'uuid';
 import {EmailService} from "../email/email.service";
 import {SignupDto} from "./dto/signup.dto";
 import {TokenDocument} from "../users/schemas/token.schema";
+import {Tokens} from "./interfaces/tokens";
+import {AuthUserEntity} from "../users/entities/authUser.entity";
+import {plainToClass} from "class-transformer";
+import {User} from "../users/schemas/user.schema";
+
 
 @Injectable()
 export class AuthService {
@@ -24,14 +27,6 @@ export class AuthService {
     }
 
     async signup(signupDto: SignupDto): Promise<Tokens> {
-
-        const userExists = await this.usersService.findByUsername(
-            signupDto.username,
-        );
-
-        if (userExists) {
-            throw new BadRequestException('User already exists');
-        }
 
         const hash = await argon2.hash(signupDto.password);
 
@@ -48,15 +43,18 @@ export class AuthService {
         } catch (e) {
             console.error(e)
         }
-        const tokens = await this.generateTokens({userId: user._id, ...user});
-        await this.tokenService.saveRefreshToken(user._id, tokens.refreshToken);
 
 
-        return tokens;
+        const authUser: AuthUserEntity = plainToClass(AuthUserEntity, user, {excludeExtraneousValues: true});
+
+        console.log(`authUser`, authUser);
+        const tokens = await this.generateAndSaveTokens(authUser);
+
+        return tokens
     }
 
 
-    async signin(signinDto: SigninDto) {
+    async signin(signinDto: SigninDto): Promise<User> {
         const user = await this.usersService.findByEmail(signinDto.email);
 
         if (!user) throw new BadRequestException('User does not exist');
@@ -65,11 +63,7 @@ export class AuthService {
         if (!passwordMatches)
             throw new BadRequestException('Password is incorrect');
 
-        const tokens = await this.generateTokens({userId: user._id, ...user});
-        await this.tokenService.saveRefreshToken(user._id, tokens.refreshToken);
-
-
-        return tokens;
+        return user;
     }
 
 
@@ -78,16 +72,16 @@ export class AuthService {
         return token;
     }
 
-    async generateTokens(payload: JwtTokenDto) {
+    async generateTokens(payload: AuthUserEntity) {
         const [accessToken, refreshToken] = await Promise.all([
-            this.jwtService.signAsync(payload,
+            this.jwtService.signAsync(JSON.parse(JSON.stringify(payload)),
                 {
                     secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
                     expiresIn: this.configService.get<number>('JWT_ACCESS_LIFE'),
                 },
             ),
             this.jwtService.signAsync(
-                payload,
+                JSON.parse(JSON.stringify(payload)),
                 {
                     secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
                     expiresIn: this.configService.get<number>('JWT_REFRESH_LIFE'),
@@ -112,9 +106,10 @@ export class AuthService {
             throw  new UnauthorizedException('User not found by refresh token')
         }
 
-        const tokens = await this.generateTokens({userId: user._id, ...user});
-        await this.tokenService.saveRefreshToken(user._id, tokens.refreshToken);
+        const authUser: AuthUserEntity = plainToClass(AuthUserEntity, user, {excludeExtraneousValues: true});
 
+        console.log(`authUser`, authUser);
+        const tokens = await this.generateAndSaveTokens(authUser);
 
         return tokens;
         /*
@@ -145,6 +140,12 @@ export class AuthService {
             const tokens = await this.generateTokens( {userId: user._id, username: user.username, email: user.email});
             await this.tokenService.saveRefreshToken(user._id, tokens.refreshToken);
          */
+    }
+
+    async generateAndSaveTokens(authUser: AuthUserEntity) {
+        const tokens = await this.generateTokens(authUser);
+        await this.tokenService.saveRefreshToken(authUser._id, tokens.refreshToken);
+        return tokens;
     }
 
 

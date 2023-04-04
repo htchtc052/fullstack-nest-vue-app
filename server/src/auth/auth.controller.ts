@@ -1,12 +1,14 @@
-import {Body, Controller, Get, Param, Post, Req, Res, UseGuards} from '@nestjs/common';
+import {Body, Controller, Get, Param, Post, Req, Res, UseGuards, UsePipes} from '@nestjs/common';
 import {Request, Response} from 'express';
 import {AuthService} from './auth.service';
 import {SigninDto} from './dto/signin.dto';
 import {RefreshTokenGuard} from '../guards/refresh-token.guard';
-import {Tokens} from "./interfaces.tokens";
 import {MailerService} from "@nestjs-modules/mailer";
 import {SignupDto} from "./dto/signup.dto";
 import {UsersService} from "../users/users.service";
+import {AuthUserEntity} from "../users/entities/authUser.entity";
+import {plainToClass} from "class-transformer";
+import {ValidationPipe} from "../pipes/validation.pipe";
 
 @Controller('auth')
 export class AuthController {
@@ -15,21 +17,26 @@ export class AuthController {
 
     //@UsePipes(new JoiValidationPipe(SignupValidationSchema))
 
+
+    @UsePipes(new ValidationPipe())
     @Post('signup')
     async signup(@Res({passthrough: true}) response: Response, @Body() signupDto: SignupDto) {
-        const tokens: Tokens = await this.authService.signup(signupDto);
-        //refresh token life 7d
-        //response.cookie('refreshToken', tokens.refreshToken, {maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true})
+        const tokens = await this.authService.signup(signupDto);
+
         return tokens;
     }
 
 
     @Post('signin')
     async signin(@Res({passthrough: true}) response: Response, @Body() signinDto: SigninDto) {
-        const tokens = await this.authService.signin(signinDto);
-        //refresh token life 7d
-        //response.cookie('refreshToken', tokens.refreshToken, {maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true})
-        return tokens;
+        const user = await this.authService.signin(signinDto);
+
+        const authUser: AuthUserEntity = plainToClass(AuthUserEntity, user, {excludeExtraneousValues: true});
+
+        const tokens = await this.authService.generateAndSaveTokens(user);
+
+        console.log(`authUser`, authUser);
+        return {...tokens, authUser};
     }
 
     @Get('activate/:activationToken')
@@ -54,7 +61,7 @@ export class AuthController {
     @Post('refreshToken')
     async refreshTokens(@Req() req: Request) {
         const refreshToken = req.user['refreshToken'];
-        const tokenData = await this.authService.refreshTokens(refreshToken);
-        return tokenData;
+        const tokens = await this.authService.refreshTokens(refreshToken);
+        return tokens;
     }
 }
