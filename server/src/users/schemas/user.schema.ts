@@ -3,6 +3,12 @@ import {Document} from 'mongoose';
 
 export type UserDocument = User & Document;
 
+export enum Genders {
+    NOT_SPECIFIED = 'not_specified',
+    FEMALE = 'female',
+    MALE = 'male',
+}
+
 @Schema()
 export class User {
 
@@ -24,6 +30,21 @@ export class User {
 
     @Prop({default: null})
     activatedAt: Date;
+
+
+    @Prop()
+    firstname: string;
+
+    @Prop()
+    lastname: string;
+
+
+    @Prop()
+    birthday: Date;
+
+
+    @Prop({default: Genders.NOT_SPECIFIED})
+    gender: Genders;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

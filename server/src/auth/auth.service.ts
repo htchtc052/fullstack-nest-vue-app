@@ -1,8 +1,8 @@
-import {BadRequestException, Injectable,} from '@nestjs/common';
+import {BadRequestException, Injectable, UnauthorizedException,} from '@nestjs/common';
 import {UsersService} from '../users/users.service';
 import {JwtService} from '@nestjs/jwt';
 import {ConfigService} from '@nestjs/config';
-import {AuthDto} from './dto/auth.dto';
+import {SigninDto} from './dto/signin.dto';
 import * as argon2 from 'argon2';
 import {JwtTokenDto} from "./dto/jwtToken.dto";
 import {TokenService} from "../users/token.service";
@@ -10,6 +10,7 @@ import {Tokens} from "./interfaces.tokens";
 import {v4 as uuid} from 'uuid';
 import {EmailService} from "../email/email.service";
 import {SignupDto} from "./dto/signup.dto";
+import {TokenDocument} from "../users/schemas/token.schema";
 
 @Injectable()
 export class AuthService {
@@ -18,11 +19,11 @@ export class AuthService {
         private jwtService: JwtService,
         private configService: ConfigService,
         private tokenService: TokenService,
-        private emailService: EmailService
+        private emailService: EmailService,
     ) {
     }
 
-    async signUp(signupDto: SignupDto): Promise<Tokens> {
+    async signup(signupDto: SignupDto): Promise<Tokens> {
 
         const userExists = await this.usersService.findByUsername(
             signupDto.username,
@@ -47,7 +48,7 @@ export class AuthService {
         } catch (e) {
             console.error(e)
         }
-        const tokens = await this.generateTokens({userId: user._id, username: user.username, email: user.email});
+        const tokens = await this.generateTokens({userId: user._id, ...user});
         await this.tokenService.saveRefreshToken(user._id, tokens.refreshToken);
 
 
@@ -55,19 +56,22 @@ export class AuthService {
     }
 
 
-    async signIn(data: AuthDto) {
-        // Check if user exists
-        const user = await this.usersService.findByUsername(data.username);
+    async signin(signinDto: SigninDto) {
+        const user = await this.usersService.findByEmail(signinDto.email);
+
         if (!user) throw new BadRequestException('User does not exist');
-        const passwordMatches = await argon2.verify(user.password, data.password);
+
+        const passwordMatches = await argon2.verify(user.password, signinDto.password);
         if (!passwordMatches)
             throw new BadRequestException('Password is incorrect');
 
-        const tokens = await this.generateTokens({userId: user._id, username: user.username, email: user.email});
+        const tokens = await this.generateTokens({userId: user._id, ...user});
         await this.tokenService.saveRefreshToken(user._id, tokens.refreshToken);
+
 
         return tokens;
     }
+
 
     async logout(refreshToken) {
         const token = await this.tokenService.removeToken(refreshToken);
@@ -79,15 +83,14 @@ export class AuthService {
             this.jwtService.signAsync(payload,
                 {
                     secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-                    expiresIn: '2m',
+                    expiresIn: this.configService.get<number>('JWT_ACCESS_LIFE'),
                 },
             ),
             this.jwtService.signAsync(
                 payload,
                 {
                     secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-                    //refresh token life 7d
-                    expiresIn: '7d',
+                    expiresIn: this.configService.get<number>('JWT_REFRESH_LIFE'),
                 },
             ),
         ]);
@@ -98,13 +101,26 @@ export class AuthService {
         };
     }
 
-    async refreshTokens(userId: string, refreshToken: string) {
+    async refreshTokens(refreshToken) {
+        const tokenData: TokenDocument = await this.tokenService.getTokenData(refreshToken);
+        if (!tokenData) {
+            throw  new UnauthorizedException('Refresh token not found')
+        }
+        const user = await this.usersService.findById(tokenData?.user?._id);
 
-        const tokens = [];
+        if (!user) {
+            throw  new UnauthorizedException('User not found by refresh token')
+        }
+
+        const tokens = await this.generateTokens({userId: user._id, ...user});
+        await this.tokenService.saveRefreshToken(user._id, tokens.refreshToken);
+
+
+        return tokens;
         /*
 
             const userData = tokenService.validateRefreshToken(refreshToken);
-            const tokenFromDb = await tokenService.findToken(refreshToken);
+            const tokenFromDb = await tokenService.getTokenData(refreshToken);
             if (!userData || !tokenFromDb) {
               throw ApiError.UnauthorizedError();
             }
@@ -129,7 +145,6 @@ export class AuthService {
             const tokens = await this.generateTokens( {userId: user._id, username: user.username, email: user.email});
             await this.tokenService.saveRefreshToken(user._id, tokens.refreshToken);
          */
-        return tokens;
     }
 
 

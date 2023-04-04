@@ -1,40 +1,57 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
-import { HttpAdapterHost } from '@nestjs/core';
+import {ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus,} from '@nestjs/common';
+import {HttpAdapterHost} from '@nestjs/core';
+
+
+export interface HttpExceptionResponse {
+    statusCode: number;
+    message: any;
+    error: string;
+}
+
+export const getErrorMessage = <T>(exception: T): any => {
+
+    if (exception instanceof HttpException) {
+
+        const errorResponse = exception.getResponse();
+        const errorMessage = (errorResponse as HttpExceptionResponse).message || exception.message;
+
+        return errorMessage;
+    } else {
+        return String(exception);
+    }
+};
 
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
-  constructor(private httpAdapterHost: HttpAdapterHost) {}
-
-  catch(exception: HttpException | Error, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-
-    let httpMessage = exception!.stack.toString();
-    let httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
-
-    if (exception instanceof HttpException) {
-      httpStatus = exception.getStatus();
-      httpMessage = exception.message;
+    constructor(private httpAdapterHost: HttpAdapterHost) {
     }
 
-    console.error(
-      `Http error status=${httpStatus} errorMessage=${httpMessage}`,
-    );
+    catch(exception: HttpException | Error, host: ArgumentsHost) {
+        const ctx = host.switchToHttp();
 
-    const { httpAdapter } = this.httpAdapterHost;
+        let message = `App error: ${exception!.stack.toString()}`;
+        let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const responseBody = {
-      statusCode: httpStatus,
-      timestamp: new Date().toISOString(),
-      path: httpAdapter.getRequestUrl(ctx.getRequest()),
-      message: httpMessage,
-    };
+        if (exception instanceof HttpException) {
+            statusCode = exception.getStatus();
+            const errorResponse = exception.getResponse();
+            //это нужно, что бы получать ошибку и как строку и как объект в случае валидации
+            message = (errorResponse as HttpExceptionResponse).message || exception.message;
 
-    httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
-  }
+        } else {
+            //показываем в лог только ошибки приложения
+            console.error(message);
+
+        }
+        const {httpAdapter} = this.httpAdapterHost;
+
+        const responseBody = {
+            statusCode,
+            timestamp: new Date().toISOString(),
+            path: httpAdapter.getRequestUrl(ctx.getRequest()),
+            message,
+        };
+
+        httpAdapter.reply(ctx.getResponse(), responseBody, statusCode);
+    }
 }

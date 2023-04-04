@@ -1,6 +1,6 @@
 export class CreateUserDto {
     username: string;
-    email: string;
     password: string;
+    email: string;
     activationToken: string;
 }

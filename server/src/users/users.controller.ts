@@ -1,23 +1,33 @@
-import {Body, Controller, Delete, Param, Patch, UseGuards,} from '@nestjs/common';
+import {Body, Controller, Get, Post, Req, UseGuards,} from '@nestjs/common';
 import {UsersService} from './users.service';
 import {UpdateUserInfoDto} from './dto/updateUserInfo.dto';
 import {AccessTokenGuard} from '../guards/access-token.guard';
+import {Request} from "express";
 
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) {
     }
 
+    @UseGuards(AccessTokenGuard)
+    @Get('getInfo')
+    async getInfo(@Req() req: Request) {
+        const user = await this.usersService.findById(req.user['userId']);
+        return user;
+    }
+
 
     @UseGuards(AccessTokenGuard)
-    @Patch(':userId')
-    update(@Param('userId') userId: string, @Body() updateUserInfo: UpdateUserInfoDto) {
-        return this.usersService.update(userId, updateUserInfo);
+    @Post('updateinfo')
+    async updateInfo(@Req() req: Request, @Body() updateUserInfo: UpdateUserInfoDto) {
+        const user = await this.usersService.update(req.user['userId'], updateUserInfo);
+        return user;
     }
 
     @UseGuards(AccessTokenGuard)
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.usersService.remove(id);
+    @Post('delete')
+    async delete(@Req() req: Request,) {
+        await this.usersService.deleteUser(req.user['userId']);
+        return {successMsg: `User deleted`}
     }
 }

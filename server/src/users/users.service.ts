@@ -1,17 +1,21 @@
 import {Injectable} from '@nestjs/common';
-import {CreateUserDto} from './dto/createUser.dto';
 import {UpdateUserInfoDto} from './dto/updateUserInfo.dto';
 import {InjectModel} from '@nestjs/mongoose';
 import {User, UserDocument} from './schemas/user.schema';
+import * as mongoose from 'mongoose';
 import {Model} from 'mongoose';
 import {ConfigService} from "@nestjs/config";
+import {CreateUserDto} from "./dto/createUser.dto";
 
 @Injectable()
 export class UsersService {
+
+
     constructor(@InjectModel(User.name) private userModel: Model<UserDocument>,
                 private configService: ConfigService) {
     }
 
+    //запросы к юзеру могут понадобится в разных контроллерах, валидациях итп. Пишем их тут, что бы UserModel везде не тащить
     async create(createUserDto: CreateUserDto): Promise<User> {
         return this.userModel.create(createUserDto);
     }
@@ -27,19 +31,36 @@ export class UsersService {
         return user;
     }
 
+    async findByEmail(email: string): Promise<User> {
+        const user = await this.userModel.findOne({email});
+        return user;
+    }
+
     async update(userId: string, updateUserInfoDto: UpdateUserInfoDto): Promise<User> {
+
+        mongoose.set("debug", true)
+        console.debug(updateUserInfoDto)
         const user = await this.userModel.findByIdAndUpdate(userId, updateUserInfoDto, {
             new: true,
         });
+        mongoose.set("debug", false)
+
         return user;
     }
 
-    async remove(id: string): Promise<User> {
-        const user = await this.userModel.findByIdAndDelete(id);
-        return user;
+
+    async deleteUser(userId: string): Promise<void> {
+        await this.userModel.deleteOne({_id: userId})
+        await this.userModel.deleteMany({user: userId})
     }
 
-    async activate(activationToken: string): Promise<Boolean> {
+    //async getInfo(userId: string): Promise<User> {
+    // const user: User = await this.findById(userId);
+    //  return user;
+    //}
+
+
+    async activate(activationToken: string): Promise<boolean> {
         const user = await this.userModel.findOne({activationToken})
         if (!user) {
             return false;
@@ -48,5 +69,6 @@ export class UsersService {
         await user.save();
         return true;
     }
+
 
 }

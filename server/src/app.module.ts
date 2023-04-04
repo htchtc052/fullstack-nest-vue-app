@@ -1,13 +1,11 @@
 import {Module} from '@nestjs/common';
-import {ConfigModule, ConfigService} from '@nestjs/config';
+import {ConfigModule} from '@nestjs/config';
 import * as path from 'path';
 import {ServeStaticModule} from '@nestjs/serve-static';
-import {MongooseModule} from '@nestjs/mongoose';
-import {AppExceptionFilter} from './filter/app-exception.filter';
-import {APP_FILTER} from '@nestjs/core';
 import * as Joi from 'joi';
 import {UsersModule} from "./users/users.module";
 import {AuthModule} from "./auth/auth.module";
+import {DatabaseModule} from "./database.module";
 
 @Module({
     imports: [
@@ -24,10 +22,12 @@ import {AuthModule} from "./auth/auth.module";
                 MONGO_URI: Joi.string().required(),
                 JWT_ACCESS_SECRET: Joi.string().required(),
                 JWT_REFRESH_SECRET: Joi.string().required(),
+                JWT_ACCESS_LIFE: Joi.number().required(),
+                JWT_REFRESH_LIFE: Joi.number().required(),
                 SMTP_HOST: Joi.string(),
                 SMTP_PORT: Joi.number(),
                 SMTP_USER: Joi.string(),
-                SMTP_PASS: Joi.string(),
+                SMTP_PASS: Joi.string().allow(""),
                 MAIL_PREVIEW_BROWSER: Joi.boolean().default(false),
 
             }),
@@ -37,39 +37,16 @@ import {AuthModule} from "./auth/auth.module";
             },
 
         }),
-
-        MongooseModule.forRootAsync({
-            imports: [ConfigModule],
-            inject: [ConfigService],
-            useFactory: async (config: ConfigService) => {
-                return {
-                    connectionFactory: async (connection) => {
-                        if (connection.readyState === 1) {
-                            console.log('DB connected');
-
-                        }
-
-                        connection.on('disconnected', () => {
-                            console.log('DB disconnected');
-                        });
-
-                        return connection;
-                    },
-                    uri: config.get<string>('MONGO_URI'),
-                };
-            },
-        }),
-
-
+        DatabaseModule,
         UsersModule,
         AuthModule,
     ],
     controllers: [],
     providers: [
-        {
-            provide: APP_FILTER,
-            useClass: AppExceptionFilter,
-        },
+        //{
+        //   provide: APP_FILTER,
+        //     useClass: AppExceptionFilter,
+        // },
     ],
 })
 export class AppModule {
