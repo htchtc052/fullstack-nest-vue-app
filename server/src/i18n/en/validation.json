@@ -1,0 +1,10 @@
+{
+  "USERNAME_NOT_EMPTY": "User name cannot be empty",
+  "EMAIL_NOT_EMPTY": "Email cannot be empty",
+  "EMAIL_INVALID": "Email has invalid format",
+  "EMAIL_BUSY": "Email busy",
+  "PASSWORD_NOT_EMPTY": "Password cannot be empty",
+  "PASSWORD_MIN": "Password need to be at least {constraints.0}",
+  "PASSWORD_CONFIRM_NOT_EMPTY": "Password confirm cannot be empty",
+  "PASSWORD_CONFIRM_NOT_MATCH": "Password and password confirm not match"
+}

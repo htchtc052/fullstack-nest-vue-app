@@ -3,9 +3,10 @@ import {ConfigModule} from '@nestjs/config';
 import * as path from 'path';
 import {ServeStaticModule} from '@nestjs/serve-static';
 import * as Joi from 'joi';
-import {UsersModule} from "./users/users.module";
+import {UserModule} from "./user/user.module";
 import {AuthModule} from "./auth/auth.module";
 import {DatabaseModule} from "./database.module";
+import {LangModule} from "./lang.module";
 
 @Module({
     imports: [
@@ -37,8 +38,9 @@ import {DatabaseModule} from "./database.module";
             },
 
         }),
+        LangModule,
         DatabaseModule,
-        UsersModule,
+        UserModule,
         AuthModule,
     ],
     controllers: [],

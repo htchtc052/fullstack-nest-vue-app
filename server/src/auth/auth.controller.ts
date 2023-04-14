@@ -1,67 +1,66 @@
-import {Body, Controller, Get, Param, Post, Req, Res, UseGuards, UsePipes} from '@nestjs/common';
-import {Request, Response} from 'express';
-import {AuthService} from './auth.service';
-import {SigninDto} from './dto/signin.dto';
+import {Body, Controller, Post, Req, UseGuards} from '@nestjs/common';
+import {Request} from 'express';
+import {SignInDto} from './dto/signIn.dto';
 import {RefreshTokenGuard} from '../guards/refresh-token.guard';
-import {MailerService} from "@nestjs-modules/mailer";
-import {SignupDto} from "./dto/signup.dto";
-import {UsersService} from "../users/users.service";
-import {AuthUserEntity} from "../users/entities/authUser.entity";
+import {SignUpDto} from "./dto/signUp.dto";
+import {UserService} from "../user/user.service";
+import {ApiBadRequestResponse, ApiOkResponse, ApiOperation, ApiUnauthorizedResponse} from "@nestjs/swagger";
+import {AuthRO} from "./types/authRO";
+import {AuthService} from "./auth.service";
+import {User} from "../user/schemas/user.schema";
+import {TokensDto} from "./dto/tokens.dto";
 import {plainToClass} from "class-transformer";
-import {ValidationPipe} from "../pipes/validation.pipe";
+import {UserDto} from "../user/dto/userDto";
+
 
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService, private userService: UsersService, private mailService: MailerService) {
+    constructor(private usersService: UserService, private authService: AuthService) {
     }
 
-    //@UsePipes(new JoiValidationPipe(SignupValidationSchema))
-
-
-    @UsePipes(new ValidationPipe())
+    @ApiOperation({summary: 'Create user'})
+    @ApiOkResponse({type: AuthRO})
+    @ApiBadRequestResponse()
     @Post('signup')
-    async signup(@Res({passthrough: true}) response: Response, @Body() signupDto: SignupDto) {
-        const tokens = await this.authService.signup(signupDto);
-
-        return tokens;
+    async signUp(@Body() signupDto: SignUpDto): Promise<AuthRO> {
+        const {user, tokens} = await this.authService.signUp(signupDto)
+        return this.generateAuthRO(user, tokens)
     }
 
-
+    @ApiOperation({summary: 'Signin User'})
+    @ApiOkResponse({type: AuthRO})
+    @ApiBadRequestResponse()
     @Post('signin')
-    async signin(@Res({passthrough: true}) response: Response, @Body() signinDto: SigninDto) {
-        const user = await this.authService.signin(signinDto);
-
-        const authUser: AuthUserEntity = plainToClass(AuthUserEntity, user, {excludeExtraneousValues: true});
-
-        const tokens = await this.authService.generateAndSaveTokens(user);
-
-        console.log(`authUser`, authUser);
-        return {...tokens, authUser};
-    }
-
-    @Get('activate/:activationToken')
-    async activate(@Param('activationToken') activationToken: string) {
-        console.log(`activationToken=${activationToken}`);
-        if (await this.userService.activate(activationToken))
-            return {msg: 'User activated'}
-        else
-            return {error: 'Activation link wrong'}
+    async signIn(@Body() signinDto: SignInDto): Promise<AuthRO> {
+        const {user, tokens} = await this.authService.signIn(signinDto)
+        return this.generateAuthRO(user, tokens)
     }
 
 
+    @ApiOperation({summary: 'User logout'})
+    @ApiOkResponse({type: String})
     @UseGuards(RefreshTokenGuard)
     @Post('logout')
-    async logout(@Req() req: Request, res: Response) {
+    async logout(@Req() req: Request) {
         const refreshToken = req.user['refreshToken']
         await this.authService.logout(refreshToken);
-        return {refreshToken}
+        return 'User logout success'
     }
 
+
+    @ApiOperation({summary: 'Refresh token'})
+    @ApiOkResponse({type: AuthRO})
+    @ApiUnauthorizedResponse()
     @UseGuards(RefreshTokenGuard)
     @Post('refreshToken')
-    async refreshTokens(@Req() req: Request) {
+    async refreshTokens(@Req() req: Request): Promise<AuthRO> {
         const refreshToken = req.user['refreshToken'];
-        const tokens = await this.authService.refreshTokens(refreshToken);
-        return tokens;
+        const {user, tokens} = await this.authService.refreshTokens(refreshToken)
+        return this.generateAuthRO(user, tokens)
+    }
+
+
+    private generateAuthRO(user: User, tokens: TokensDto): AuthRO {
+        return {user: plainToClass(UserDto, user, {excludeExtraneousValues: true}), tokens};
     }
 }
