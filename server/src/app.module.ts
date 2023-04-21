@@ -7,6 +7,9 @@ import {UserModule} from "./user/user.module";
 import {AuthModule} from "./auth/auth.module";
 import {DatabaseModule} from "./database.module";
 import {LangModule} from "./lang.module";
+import {APP_GUARD} from "@nestjs/core";
+import {JwtAuthGuard} from "./auth/guards/jwtAuthGuard";
+import {JwtService} from "@nestjs/jwt";
 
 @Module({
     imports: [
@@ -45,10 +48,11 @@ import {LangModule} from "./lang.module";
     ],
     controllers: [],
     providers: [
-        //{
-        //   provide: APP_FILTER,
-        //     useClass: AppExceptionFilter,
-        // },
+        {
+            provide: APP_GUARD,
+            useClass: JwtAuthGuard,
+        },
+        JwtService
     ],
 })
 export class AppModule {

@@ -5,8 +5,6 @@ import {EmailService} from "../email/email.service";
 import {SignUpDto} from "./dto/signUp.dto";
 import {SignInDto} from "./dto/signIn.dto";
 import * as argon2 from "argon2";
-
-import {v4 as uuid} from 'uuid';
 import {User} from "../user/schemas/user.schema";
 import {JwtPayload} from "./types/JwtPayload";
 
@@ -21,9 +19,8 @@ export class AuthService {
 
     async signUp(signupDto: SignUpDto): Promise<{ user, tokens }> {
 
-        const activationToken: string = uuid();
 
-        const user = await this.usersService.createUser({...signupDto, activationToken})
+        const user = await this.usersService.createUser(signupDto)
 
         await this.emailService.sendActivationEmail(user);
 
@@ -58,17 +55,7 @@ export class AuthService {
     }
 
     async verifyPayload(payload: JwtPayload): Promise<User> {
-        let user: User;
-
-        try {
-            user = await this.usersService.getUserById(payload.userId);
-        } catch (error) {
-            throw new UnauthorizedException(
-                `There isn't any user with id: ${payload.userId}`,
-            );
-        }
-
-        return user;
+        return this.usersService.getUserById(payload.userId);
     }
 
 

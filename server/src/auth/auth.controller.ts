@@ -1,7 +1,6 @@
-import {Body, Controller, Post, Req, UseGuards} from '@nestjs/common';
+import {Body, Controller, Post, Req} from '@nestjs/common';
 import {Request} from 'express';
 import {SignInDto} from './dto/signIn.dto';
-import {RefreshTokenGuard} from '../guards/refresh-token.guard';
 import {SignUpDto} from "./dto/signUp.dto";
 import {UserService} from "../user/user.service";
 import {ApiBadRequestResponse, ApiOkResponse, ApiOperation, ApiUnauthorizedResponse} from "@nestjs/swagger";
@@ -39,7 +38,7 @@ export class AuthController {
 
     @ApiOperation({summary: 'User logout'})
     @ApiOkResponse({type: String})
-    @UseGuards(RefreshTokenGuard)
+    //@UseGuards(RefreshTokenGuard)
     @Post('logout')
     async logout(@Req() req: Request) {
         const refreshToken = req.user['refreshToken']
@@ -51,7 +50,7 @@ export class AuthController {
     @ApiOperation({summary: 'Refresh token'})
     @ApiOkResponse({type: AuthRO})
     @ApiUnauthorizedResponse()
-    @UseGuards(RefreshTokenGuard)
+    // @UseGuards(RefreshTokenGuard)
     @Post('refreshToken')
     async refreshTokens(@Req() req: Request): Promise<AuthRO> {
         const refreshToken = req.user['refreshToken'];

@@ -7,14 +7,19 @@ import {IsEmailAllreadyExists} from "./validators/isEmailAllreadyExists";
 import {UserRepository} from "./user.repository";
 import {EmailService} from "../email/email.service";
 import {EmailModule} from "../email/email.module";
+import {JwtModule, JwtService} from "@nestjs/jwt";
+import {UserProfileController} from "./userProfile.controller";
+import {AdminController} from "./admin.controller";
 
 @Module({
+
     imports: [
         MongooseModule.forFeature([{name: User.name, schema: UserSchema}]),
-        EmailModule
+        EmailModule,
+        JwtModule.register({}),
     ],
-    controllers: [UserController],
-    providers: [UserService, UserRepository, EmailService, IsEmailAllreadyExists],
+    controllers: [UserController, UserProfileController, AdminController],
+    providers: [UserService, UserRepository, EmailService, IsEmailAllreadyExists, JwtService],
     exports: [UserService, UserRepository],
 })
 export class UserModule {

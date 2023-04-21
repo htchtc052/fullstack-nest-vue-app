@@ -22,6 +22,11 @@ export class SignUpDto {
     @Validate(IsEmailAllreadyExists, {message: i18nValidationMessage('validation.EMAIL_BUSY')})
     email: string;
 
+    @IsNotEmpty({message: i18nValidationMessage('validation.SLUG_NOT_EMPTY')})
+    //toDo validate slug format
+    @Validate(IsEmailAllreadyExists, {message: i18nValidationMessage('validation.SLUG_BUSY')})
+    slug: string;
+
 
     @ApiProperty({
         description: 'User password',

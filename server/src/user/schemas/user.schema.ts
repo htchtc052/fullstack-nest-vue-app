@@ -10,6 +10,11 @@ export enum Genders {
     MALE = 'male',
 }
 
+export enum Role {
+    User = 'user',
+    Admin = 'admin',
+}
+
 @Schema()
 export class User {
 
@@ -18,6 +23,9 @@ export class User {
 
     @Prop({required: true})
     username: string;
+
+    @Prop({required: true})
+    slug: string;
 
     @Prop({required: true, unique: true})
     email: string;
@@ -39,6 +47,10 @@ export class User {
 
     @Prop({default: Genders.NOT_SPECIFIED})
     gender: Genders;
+
+    @Prop({type: [String], enum: Object.values(Role), default: [Role.User]})
+    roles: Role[];
+
 
     @Prop()
     activationToken: string;

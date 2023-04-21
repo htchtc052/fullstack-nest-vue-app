@@ -4,6 +4,7 @@ import {User} from './schemas/user.schema';
 import {CreateUserType} from "./types/createUser.type";
 import {EmailService} from "../email/email.service";
 import {UserRepository} from "./user.repository";
+import {v4 as uuid} from "uuid";
 
 @Injectable()
 export class UserService {
@@ -12,17 +13,31 @@ export class UserService {
                 private usersRepository: UserRepository) {
     }
 
-    async createUser(createUserType: CreateUserType): Promise<User> {
-        return this.usersRepository.create(createUserType);
+    async createUser(createUserType: CreateUserType, createActivated?: boolean): Promise<User> {
+        if (createActivated) {
+            return this.usersRepository.create(createUserType);
+        } else {
+            const activationToken: string = uuid();
+            return this.usersRepository.create({...createUserType, activationToken});
+        }
+
     }
 
     getUserById(id: string): Promise<User> {
         return this.usersRepository.findById(id);
-
     }
+
+    getUsers(): Promise<User[]> {
+        return this.usersRepository.getUsers();
+    }
+
 
     findByEmail(email: string): Promise<User> {
         return this.usersRepository.findByEmail(email);
+    }
+
+    async findBySlug(slug: string) {
+        return this.usersRepository.findBySlug(slug);
     }
 
 

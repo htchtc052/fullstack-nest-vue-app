@@ -1,13 +1,12 @@
-import {Body, Controller, Get, Param, Post, Req, UseGuards,} from '@nestjs/common';
+import {Body, Controller, Get, Param, Post, Request} from '@nestjs/common';
+
 import {UserService} from './user.service';
 import {UpdateUserInfoDto} from './dto/updateUserInfo.dto';
-import {AccessTokenGuard} from '../guards/access-token.guard';
-import {Request} from "express";
 import {ApiOkResponse, ApiOperation} from "@nestjs/swagger";
-import {UserDto, UserRO} from "./dto/userDto";
+import {UserDto} from "./dto/userDto";
 import {User} from "./schemas/user.schema";
 import {plainToClass} from "class-transformer";
-import {AuthUser} from "./decorators/authUser.decorator";
+import {requireAuth} from "../auth/decorators/requireAuth.decorator";
 
 @Controller('users')
 export class UserController {
@@ -16,28 +15,30 @@ export class UserController {
 
 
     @ApiOperation({summary: 'Get user data'})
-    @ApiOkResponse({type: UserRO})
-    @UseGuards(AccessTokenGuard)
+    @ApiOkResponse({type: UserDto})
+
+    @requireAuth()
     @Get('getUser')
-    getUser(@AuthUser() user: User) {
-        return this.generateUserRO(user)
+    getUser(@Request() req) {
+        const user = req.user
+        return this.generateUserResponse(user)
     }
 
     @ApiOperation({summary: 'User user info'})
-    @ApiOkResponse({type: UserRO})
-    @UseGuards(AccessTokenGuard)
+    @ApiOkResponse({type: UserDto})
+    @requireAuth()
     @Post('updateinfo')
-    async updateInfo(@AuthUser() user: User, @Body() updateUserInfo: UpdateUserInfoDto) {
-        user = await this.usersService.updateUserInfo(user, updateUserInfo);
-        return this.generateUserRO(user)
+    async updateInfo(@Request() req, @Body() updateUserInfo: UpdateUserInfoDto) {
+        const user = await this.usersService.updateUserInfo(req.user, updateUserInfo);
+        return this.generateUserResponse(user)
 
     }
 
     @ApiOperation({summary: 'User delete'})
-    @ApiOkResponse({type: UserRO})
-    @UseGuards(AccessTokenGuard)
+    @ApiOkResponse({type: UserDto})
+    @requireAuth()
     @Post('delete')
-    async deleteUser(@Req() req: Request) {
+    async deleteUser(@Request() req) {
         await this.usersService.deleteUser(req.user['userId']);
         return `User deleted`
     }
@@ -52,9 +53,7 @@ export class UserController {
             return 'Activation link wrong'
     }
 
-    private async generateUserRO(user: User): Promise<UserRO> {
-        return {user: plainToClass(UserDto, user, {excludeExtraneousValues: true})};
+    private async generateUserResponse(user: User): Promise<UserDto> {
+        return plainToClass(UserDto, user, {excludeExtraneousValues: true});
     }
-
-
 }

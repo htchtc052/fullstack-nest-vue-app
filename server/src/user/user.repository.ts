@@ -20,6 +20,14 @@ export class UserRepository {
         return this.userModel.findOne({email});
     }
 
+    findBySlug(slug: string) {
+        return this.userModel.findOne({slug});
+    }
+
+
+    getUsers() {
+        return this.userModel.find({});
+    }
 
     findByActivationToken(activationToken: string): Promise<User> {
         return this.userModel.findOne({activationToken});

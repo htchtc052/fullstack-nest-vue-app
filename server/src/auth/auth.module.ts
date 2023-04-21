@@ -5,9 +5,7 @@ import {TokensService} from "./tokens.service";
 import {UserService} from "../user/user.service";
 import {MongooseModule} from "@nestjs/mongoose";
 import {Token, TokenSchema} from "./schema/token.schema";
-import {JwtModule} from "@nestjs/jwt";
-import {AccessTokenStrategy} from "./strategies/accessToken.strategy";
-import {RefreshTokenStrategy} from "./strategies/refreshToken.strategy";
+import {JwtModule, JwtService} from "@nestjs/jwt";
 import {TokensRepository} from "./tokens.repository";
 import {EmailModule} from "../email/email.module";
 import {EmailService} from "../email/email.service";
@@ -22,7 +20,7 @@ import {AuthService} from "./auth.service";
     ],
     controllers: [AuthController],
 
-    providers: [AuthService, TokensService, UserService, AccessTokenStrategy, RefreshTokenStrategy, TokensRepository, EmailService]
+    providers: [AuthService, TokensService, UserService, TokensRepository, EmailService, JwtService]
 })
 export class AuthModule {
 }

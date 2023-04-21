@@ -1,7 +1,7 @@
 import {Expose, Type} from "class-transformer";
 import {ApiProperty} from "@nestjs/swagger";
 
-export class UserDto {
+export class UserProfileDto {
     @ApiProperty({
         description: 'User id'
     })
@@ -30,6 +30,7 @@ export class UserDto {
     @ApiProperty()
     @Expose()
     lastname: string;
+
 
     @Expose()
     gender: string
