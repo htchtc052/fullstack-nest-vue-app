@@ -5,8 +5,6 @@ import {EmailService} from "../email/email.service";
 import {SignUpDto} from "./dto/signUp.dto";
 import {SignInDto} from "./dto/signIn.dto";
 import * as argon2 from "argon2";
-import {User} from "../user/schemas/user.schema";
-import {JwtPayload} from "./types/JwtPayload";
 
 @Injectable()
 export class AuthService {
@@ -20,7 +18,7 @@ export class AuthService {
     async signUp(signupDto: SignUpDto): Promise<{ user, tokens }> {
 
 
-        const user = await this.usersService.createUser(signupDto)
+        const user = await this.usersService.createUser(signupDto, {createActivated: false})
 
         await this.emailService.sendActivationEmail(user);
 
@@ -53,10 +51,4 @@ export class AuthService {
         const tokens = await this.tokensService.generateAndSaveTokens(user);
         return {user, tokens}
     }
-
-    async verifyPayload(payload: JwtPayload): Promise<User> {
-        return this.usersService.getUserById(payload.userId);
-    }
-
-
 }

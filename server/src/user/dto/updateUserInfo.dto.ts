@@ -3,21 +3,32 @@ import {IsEnum, IsOptional} from "class-validator";
 import {ApiProperty} from "@nestjs/swagger";
 
 export class UpdateUserInfoDto {
-    @ApiProperty({
-        name: "User firstname"
-    })
+    @ApiProperty()
     @IsOptional()
     firstname: string;
 
-    @ApiProperty({
-        name: "User lastname"
-    })
+    @ApiProperty()
     @IsOptional()
     lastname: string;
 
+    @ApiProperty()
     @IsEnum(Genders)
     gender: Genders;
 
+    @ApiProperty()
     @IsOptional()
     birthday: Date;
+
+    @ApiProperty()
+    @IsOptional()
+    description: string
+
+    @ApiProperty()
+    @IsOptional()
+    hiddenDescription: string
+
+    @ApiProperty()
+    @IsOptional()
+    private: boolean
+
 }

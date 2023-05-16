@@ -18,6 +18,10 @@ export enum Role {
 @Schema()
 export class User {
 
+    static get modelName() {
+        return 'Article'
+    }
+
     declare _id: string;
 
 
@@ -40,10 +44,14 @@ export class User {
     @Prop()
     lastname: string;
 
-
     @Prop()
     birthday: Date;
 
+    @Prop()
+    description: string
+
+    @Prop()
+    hiddenDescription: string
 
     @Prop({default: Genders.NOT_SPECIFIED})
     gender: Genders;
@@ -57,6 +65,11 @@ export class User {
 
     @Prop({default: null})
     activatedAt: Date;
+
+    @Prop({default: false})
+    private: boolean;
+
+    isOwner: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

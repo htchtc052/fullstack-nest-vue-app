@@ -19,7 +19,6 @@ export class RolesGuard implements CanActivate {
 
         if (!user) return false;
 
-        console.log(`user.roles, roles`, user.roles, roles);
 
         return user.roles.some((role) => roles.indexOf(role) > -1);
 

@@ -1,7 +1,7 @@
 import {Injectable} from '@nestjs/common';
 import {UpdateUserInfoDto} from './dto/updateUserInfo.dto';
 import {User} from './schemas/user.schema';
-import {CreateUserType} from "./types/createUser.type";
+import {CreateUserOptions, CreateUserType} from "./types/createUser.type";
 import {EmailService} from "../email/email.service";
 import {UserRepository} from "./user.repository";
 import {v4 as uuid} from "uuid";
@@ -13,8 +13,8 @@ export class UserService {
                 private usersRepository: UserRepository) {
     }
 
-    async createUser(createUserType: CreateUserType, createActivated?: boolean): Promise<User> {
-        if (createActivated) {
+    async createUser(createUserType: CreateUserType, createUserOptions: CreateUserOptions): Promise<User> {
+        if (createUserOptions.createActivated) {
             return this.usersRepository.create(createUserType);
         } else {
             const activationToken: string = uuid();
@@ -36,7 +36,7 @@ export class UserService {
         return this.usersRepository.findByEmail(email);
     }
 
-    async findBySlug(slug: string) {
+    findBySlug(slug: string): Promise<User> {
         return this.usersRepository.findBySlug(slug);
     }
 
@@ -61,5 +61,10 @@ export class UserService {
         return true;
     }
 
+
+    isUserItself(resource: User, actor: User): boolean {
+        if (!actor) return false;
+        return resource?._id.toString() === actor._id.toString();
+    }
 
 }

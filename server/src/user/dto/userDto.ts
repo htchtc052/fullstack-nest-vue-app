@@ -9,6 +9,7 @@ export class UserDto {
     @Expose()
     _id: string;
 
+
     @ApiProperty()
     @Expose()
     username: string;
@@ -36,6 +37,19 @@ export class UserDto {
 
     @Expose()
     birthday: Date
+
+    @Expose()
+    description: string
+
+    @Expose({groups: ['readPrivateFields']})
+    private: boolean
+
+
+    @Expose({groups: ['readPrivateFields']})
+    hiddenDescription: string
+
+    @Expose()
+    isOwner: boolean
 
 }
 
