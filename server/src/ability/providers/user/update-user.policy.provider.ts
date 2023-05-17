@@ -1,9 +1,9 @@
 import {Provider} from "@nestjs/common";
 import {REQUEST} from "@nestjs/core";
-import {ReadUserPolicyHandler} from "../../policies/user/read-user.policy.handler";
+import {UpdateUserPolicyHandler} from "../../policies/user/update-user.policy.handler";
 
 export const UpdateUserPolicyProvider: Provider = {
-    provide: ReadUserPolicyHandler,
+    provide: UpdateUserPolicyHandler,
     inject: [REQUEST],
     useFactory: (request: Request) => {
         // @ts-ignore

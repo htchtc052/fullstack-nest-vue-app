@@ -6,11 +6,11 @@ import {aclProviders} from "./providers";
 import {policies} from "./policies";
 
 @Module({
+    controllers: [],
     providers: [AbilityFactory, ...aclProviders],
     exports: [AbilityFactory, ...policies],
     imports: [
         MongooseModule.forFeature([{name: User.name, schema: UserSchema}]),
-
     ],
 })
 export class AbilityModule {
